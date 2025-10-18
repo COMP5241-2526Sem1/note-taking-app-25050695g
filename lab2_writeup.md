@@ -95,14 +95,14 @@ nodename nor servname provided, or not known
 
 **Initial Attempt**:
 ```bash
-DATABASE_URL=postgresql://postgres:[Xxw981126!]@...
+DATABASE_URL=postgresql://postgres:[YOUR_PASSWARD!]@...
 ```
 
 **Error**: Brackets in password caused parsing issues.
 
 **Solution**: Remove brackets from password:
 ```bash
-DATABASE_URL=postgresql://postgres:Xxw981126!@...
+DATABASE_URL=postgresql://postgres:YOUR_PASSWARD!@...
 ```
 
 #### Challenge 3: Wrong Pooling Server
@@ -143,12 +143,12 @@ postgres.nnsimjodhlleqxssaigd
 
 **Issue**: Password was changed in Supabase dashboard.
 
-**Old Password**: `Xxw981126!`  
+**Old Password**: `YOUR_PASSWARD!`  
 **New Password**: `EwmvE3PTsaAP10bD`
 
 **Final Working Configuration**:
 ```bash
-DATABASE_URL=postgresql://postgres.nnsimjodhlleqxssaigd:EwmvE3PTsaAP10bD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.nnsimjodhlleqxssaigd:***your_password***@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
 ```
 
 ### 1.3 Testing & Validation
@@ -423,13 +423,13 @@ openai>=1.0.0
 **`.env` file**:
 ```bash
 # Supabase PostgreSQL
-DATABASE_URL=postgresql://postgres.nnsimjodhlleqxssaigd:EwmvE3PTsaAP10bD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.nnsimjodhlleqxssaigd:***your_password***@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
 
 # GitHub Models API
-GITHUB_TOKEN=github_pat_11AJ75QJQ0UpuPO9mo6dDU_...
+GITHUB_TOKEN=***your_github_token***
 
 # Flask
-SECRET_KEY=asdf#FGSgvasgf$5$WGT
+SECRET_KEY=***your_secret_key***
 FLASK_ENV=development
 ```
 
