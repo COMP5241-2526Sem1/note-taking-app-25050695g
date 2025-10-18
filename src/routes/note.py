@@ -74,3 +74,28 @@ def search_notes():
     
     return jsonify([note.to_dict() for note in notes])
 
+@note_bp.route('/notes/translate', methods=['POST'])
+def translate_note():
+    """Translate note title and content to target language"""
+    try:
+        from src.llm import translate_note as translate_note_llm
+        
+        data = request.json
+        if not data or 'title' not in data or 'content' not in data or 'targetLanguage' not in data:
+            return jsonify({'error': 'Title, content, and targetLanguage are required'}), 400
+        
+        title = data['title']
+        content = data['content']
+        target_language = data['targetLanguage']
+        
+        if not title.strip() and not content.strip():
+            return jsonify({'error': 'Cannot translate empty note'}), 400
+        
+        # Call LLM translation function
+        translated = translate_note_llm(title, content, target_language)
+        
+        return jsonify(translated), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Translation failed: {str(e)}'}), 500
+

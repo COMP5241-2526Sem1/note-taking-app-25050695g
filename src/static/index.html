@@ -200,6 +200,45 @@
             transform: translateY(-1px);
         }
 
+        .btn-translate {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-translate:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .translate-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .translate-select {
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .translate-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .translating {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -352,6 +391,25 @@
                 <div id="messageArea"></div>
 
                 <div id="editorForm" style="display: none;">
+                    <!-- Translation Controls -->
+                    <div class="translate-controls">
+                        <label for="targetLanguage" style="font-weight: 600; color: #333;">🌐 Translate to:</label>
+                        <select class="translate-select" id="targetLanguage">
+                            <option value="">Select Language</option>
+                            <option value="Chinese">Chinese (中文)</option>
+                            <option value="English">English</option>
+                            <option value="Spanish">Spanish (Español)</option>
+                            <option value="French">French (Français)</option>
+                            <option value="German">German (Deutsch)</option>
+                            <option value="Japanese">Japanese (日本語)</option>
+                            <option value="Korean">Korean (한국어)</option>
+                            <option value="Portuguese">Portuguese (Português)</option>
+                            <option value="Russian">Russian (Русский)</option>
+                            <option value="Arabic">Arabic (العربية)</option>
+                        </select>
+                        <button class="btn btn-translate" id="translateBtn">🔄 Translate</button>
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label" for="noteTitle">Title</label>
                         <input type="text" class="form-input" id="noteTitle" placeholder="Enter note title...">
@@ -389,6 +447,7 @@
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
+                document.getElementById('translateBtn').addEventListener('click', () => this.translateNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
                 // Auto-save on content change (debounced)
@@ -547,6 +606,63 @@
                     }
                 } catch (error) {
                     this.showMessage(`Error saving note: ${error.message}`, 'error');
+                }
+            }
+
+            async translateNote() {
+                const title = document.getElementById('noteTitle').value;
+                const content = document.getElementById('noteContent').value;
+                const targetLanguage = document.getElementById('targetLanguage').value;
+
+                if (!targetLanguage) {
+                    this.showMessage('Please select a target language', 'error');
+                    return;
+                }
+
+                if (!title && !content) {
+                    this.showMessage('Please enter some content to translate', 'error');
+                    return;
+                }
+
+                const translateBtn = document.getElementById('translateBtn');
+                const originalBtnText = translateBtn.innerHTML;
+                
+                try {
+                    // Show loading state
+                    translateBtn.disabled = true;
+                    translateBtn.classList.add('translating');
+                    translateBtn.innerHTML = '🔄 Translating...';
+                    this.showMessage('Translating with AI...', 'loading');
+
+                    const response = await fetch('/api/notes/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title,
+                            content: content,
+                            targetLanguage: targetLanguage
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to translate note');
+                    }
+
+                    const translated = await response.json();
+                    
+                    // Update the form with translated content
+                    document.getElementById('noteTitle').value = translated.title;
+                    document.getElementById('noteContent').value = translated.content;
+                    
+                    this.showMessage(`✨ Successfully translated to ${targetLanguage}!`, 'success');
+                } catch (error) {
+                    this.showMessage(`Error translating: ${error.message}`, 'error');
+                } finally {
+                    // Reset button state
+                    translateBtn.disabled = false;
+                    translateBtn.classList.remove('translating');
+                    translateBtn.innerHTML = originalBtnText;
                 }
             }
 
