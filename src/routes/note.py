@@ -99,3 +99,32 @@ def translate_note():
     except Exception as e:
         return jsonify({'error': f'Translation failed: {str(e)}'}), 500
 
+@note_bp.route('/notes/summarize', methods=['POST'])
+def summarize_note():
+    """Generate a summary of note content using LLM"""
+    try:
+        from src.llm import summarize_note as summarize_note_llm
+        
+        data = request.json
+        if not data or 'title' not in data or 'content' not in data:
+            return jsonify({'error': 'Title and content are required'}), 400
+        
+        title = data['title']
+        content = data['content']
+        summary_length = data.get('summaryLength', 'medium')  # default to medium
+        
+        if not content.strip():
+            return jsonify({'error': 'Cannot summarize empty content'}), 400
+        
+        # Validate summary length
+        if summary_length not in ['short', 'medium', 'long']:
+            return jsonify({'error': 'summaryLength must be "short", "medium", or "long"'}), 400
+        
+        # Call LLM summarization function
+        result = summarize_note_llm(title, content, summary_length)
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Summarization failed: {str(e)}'}), 500
+

@@ -80,3 +80,59 @@ def translate_note(title, content, target_language):
         }
     except Exception as e:
         raise Exception(f"Note translation failed: {str(e)}")
+
+def summarize_text(text, summary_length="medium"):
+    """
+    Summarize text using LLM
+    
+    Args:
+        text: The text to summarize
+        summary_length: Length of summary - 'short' (1-2 sentences), 'medium' (3-5 sentences), 'long' (detailed paragraph)
+    
+    Returns:
+        str: Summarized text
+    """
+    length_instructions = {
+        "short": "Provide a concise summary in 1-2 sentences, capturing only the most essential points.",
+        "medium": "Provide a balanced summary in 3-5 sentences, covering the main ideas and key details.",
+        "long": "Provide a comprehensive summary in a detailed paragraph, covering all important aspects and supporting details."
+    }
+    
+    instruction = length_instructions.get(summary_length, length_instructions["medium"])
+    
+    system_prompt = f"""You are an expert at summarizing text. {instruction}
+Be clear, accurate, and maintain the original meaning. Focus on the key information and main ideas."""
+    
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Please summarize the following text:\n\n{text}"}
+    ]
+    
+    try:
+        summary = call_llm_model(model, messages, temperature=0.5, top_p=0.9)
+        return summary.strip()
+    except Exception as e:
+        raise Exception(f"Summarization failed: {str(e)}")
+
+def summarize_note(title, content, summary_length="medium"):
+    """
+    Generate a summary of a note's content
+    
+    Args:
+        title: Note title (for context)
+        content: Note content to summarize
+        summary_length: Length of summary - 'short', 'medium', or 'long'
+    
+    Returns:
+        dict: Dictionary with 'summary' key containing the generated summary
+    """
+    try:
+        # Combine title and content for better context
+        full_text = f"Title: {title}\n\nContent: {content}"
+        summary = summarize_text(full_text, summary_length)
+        
+        return {
+            "summary": summary
+        }
+    except Exception as e:
+        raise Exception(f"Note summarization failed: {str(e)}")

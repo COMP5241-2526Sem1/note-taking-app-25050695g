@@ -239,6 +239,71 @@
             pointer-events: none;
         }
 
+        .btn-summarize {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-summarize:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .summary-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 10px;
+        }
+
+        .summary-select {
+            padding: 8px 12px;
+            border: 2px solid #b8dce8;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .summary-select:focus {
+            outline: none;
+            border-color: #17a2b8;
+        }
+
+        .summary-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-left: 4px solid #17a2b8;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .summary-result.show {
+            display: block;
+        }
+
+        .summary-result h4 {
+            margin: 0 0 10px 0;
+            color: #17a2b8;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .summary-result p {
+            margin: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .summarizing {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -410,6 +475,23 @@
                         <button class="btn btn-translate" id="translateBtn">🔄 Translate</button>
                     </div>
 
+                    <!-- Summarization Controls -->
+                    <div class="summary-controls">
+                        <label for="summaryLength" style="font-weight: 600; color: #333;">📝 Summarize:</label>
+                        <select class="summary-select" id="summaryLength">
+                            <option value="short">Short (1-2 sentences)</option>
+                            <option value="medium" selected>Medium (3-5 sentences)</option>
+                            <option value="long">Long (detailed)</option>
+                        </select>
+                        <button class="btn btn-summarize" id="summarizeBtn">✨ Generate Summary</button>
+                    </div>
+
+                    <!-- Summary Result Display -->
+                    <div class="summary-result" id="summaryResult">
+                        <h4>📋 Summary:</h4>
+                        <p id="summaryText"></p>
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label" for="noteTitle">Title</label>
                         <input type="text" class="form-input" id="noteTitle" placeholder="Enter note title...">
@@ -448,6 +530,7 @@
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('translateBtn').addEventListener('click', () => this.translateNote());
+                document.getElementById('summarizeBtn').addEventListener('click', () => this.summarizeNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
                 // Auto-save on content change (debounced)
@@ -512,6 +595,9 @@
                 document.getElementById('noteTitle').value = note.title || '';
                 document.getElementById('noteContent').value = note.content || '';
                 document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
+                
+                // Hide summary result when switching notes
+                document.getElementById('summaryResult').classList.remove('show');
             }
 
             createNewNote() {
@@ -528,6 +614,9 @@
                 document.getElementById('noteContent').value = '';
                 document.getElementById('editorTitle').textContent = 'New Note';
                 document.getElementById('noteTitle').focus();
+                
+                // Hide summary result when creating new note
+                document.getElementById('summaryResult').classList.remove('show');
                 
                 // Remove active state from all notes
                 document.querySelectorAll('.note-item').forEach(item => {
@@ -663,6 +752,61 @@
                     translateBtn.disabled = false;
                     translateBtn.classList.remove('translating');
                     translateBtn.innerHTML = originalBtnText;
+                }
+            }
+
+            async summarizeNote() {
+                const title = document.getElementById('noteTitle').value;
+                const content = document.getElementById('noteContent').value;
+                const summaryLength = document.getElementById('summaryLength').value;
+
+                if (!content.trim()) {
+                    this.showMessage('Please enter some content to summarize', 'error');
+                    return;
+                }
+
+                const summarizeBtn = document.getElementById('summarizeBtn');
+                const originalBtnText = summarizeBtn.innerHTML;
+                const summaryResult = document.getElementById('summaryResult');
+                const summaryText = document.getElementById('summaryText');
+                
+                try {
+                    // Show loading state
+                    summarizeBtn.disabled = true;
+                    summarizeBtn.classList.add('summarizing');
+                    summarizeBtn.innerHTML = '✨ Generating...';
+                    this.showMessage('Generating summary with AI...', 'loading');
+                    summaryResult.classList.remove('show');
+
+                    const response = await fetch('/api/notes/summarize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title || 'Untitled',
+                            content: content,
+                            summaryLength: summaryLength
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to generate summary');
+                    }
+
+                    const result = await response.json();
+                    
+                    // Display the summary
+                    summaryText.textContent = result.summary;
+                    summaryResult.classList.add('show');
+                    
+                    this.showMessage('✨ Summary generated successfully!', 'success');
+                } catch (error) {
+                    this.showMessage(`Error generating summary: ${error.message}`, 'error');
+                } finally {
+                    // Reset button state
+                    summarizeBtn.disabled = false;
+                    summarizeBtn.classList.remove('summarizing');
+                    summarizeBtn.innerHTML = originalBtnText;
                 }
             }
 
